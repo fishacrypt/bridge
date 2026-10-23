@@ -1,0 +1,10 @@
+﻿.env
+.env.*
+!.env.example
+
+node_modules/
+coverage/
+.DS_Store
+Thumbs.db
+
+relayer-state.json

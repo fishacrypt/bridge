@@ -1,0 +1,25 @@
+{
+  "name": "tetrix-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "QMS Testnet <-> Sepolia / Base Sepolia / Arbitrum Sepolia / OP Sepolia bridge (native QMS and WQMS)",
+  "scripts": {
+    "compile": "node scripts/compile.js",
+    "test": "node test/e2e.js && node test/dapp-e2e.js",
+    "deploy": "node --env-file=.env scripts/deploy.js",
+    "relayer": "node --env-file=.env relayer/run.js",
+    "apply-config": "node scripts/apply-config.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
+    "ethers": "^6.17.0",
+    "solc": "^0.8.26"
+  },
+  "devDependencies": {
+    "ganache": "^7.9.2",
+    "jsdom": "^29.1.1"
+  }
+}

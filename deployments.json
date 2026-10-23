@@ -1,0 +1,36 @@
+{
+  "hubChainId": 19480,
+  "wqms": "0x9AA510295aC664A3d5A3182a3eFe959DE2B12c34",
+  "relayer": "0x2DB5F27BCC66f5627b53487be544F02a94B5fD54",
+  "owner": "0xEae9a255D6AcB4994f335AE3B92ECc421F03ad0d",
+  "deployedAt": "2026-10-23T05:51:01.031Z",
+  "chains": {
+    "19480": {
+      "name": "QMS Testnet",
+      "role": "hub",
+      "bridge": "0x3E853eF91E159Dc69B79b32260948fD878361267",
+      "startBlock": 183338
+    },
+    "84532": {
+      "name": "Base Sepolia",
+      "role": "spoke",
+      "bridge": "0x3E853eF91E159Dc69B79b32260948fD878361267",
+      "token": "0x3789B2a0611177bA9795fA9bB7874Ab8E2321313",
+      "startBlock": 49064132
+    },
+    "421614": {
+      "name": "Arbitrum Sepolia",
+      "role": "spoke",
+      "bridge": "0x3E853eF91E159Dc69B79b32260948fD878361267",
+      "token": "0x3789B2a0611177bA9795fA9bB7874Ab8E2321313",
+      "startBlock": 321961657
+    },
+    "11155420": {
+      "name": "OP Sepolia",
+      "role": "spoke",
+      "bridge": "0x3E853eF91E159Dc69B79b32260948fD878361267",
+      "token": "0x3789B2a0611177bA9795fA9bB7874Ab8E2321313",
+      "startBlock": 50466418
+    }
+  }
+}

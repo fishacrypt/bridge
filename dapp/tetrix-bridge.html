@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tetrix Bridge</title>
+<meta name="description" content="Bridge between test networks, including QMS Testnet.">
+<script>try{document.documentElement.setAttribute("data-theme",JSON.parse(localStorage.getItem("tetrixbridge.theme"))||"dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
+<style>
+:root{
+  --bg:#0a0b0f; --card:#12141b; --box:#181b24; --line:#252a37; --line2:#303646;
+  --text:#e9ecf3; --mut:#8a91a5; --acc:#7cf5c8; --acc-ink:#04140e;
+  --warn:#f5c26b; --bad:#ff7a8a; --ok:#7cf5c8; --r:18px;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+:root[data-theme=light]{--bg:#f4f6fb;--card:#fff;--box:#f0f2f8;--line:#e1e5ef;--line2:#cbd1e2;--text:#12141b;--mut:#5f6880;--acc:#0fa97c;--acc-ink:#fff;--warn:#a86f08;--bad:#d4324a;--ok:#0b8f68}
+@media (prefers-color-scheme:light){:root[data-theme=system]{--bg:#f4f6fb;--card:#fff;--box:#f0f2f8;--line:#e1e5ef;--line2:#cbd1e2;--text:#12141b;--mut:#5f6880;--acc:#0fa97c;--acc-ink:#fff;--warn:#a86f08;--bad:#d4324a;--ok:#0b8f68}}
+:root{color-scheme:dark} :root[data-theme=light]{color-scheme:light}
+@media (prefers-color-scheme:light){:root[data-theme=system]{color-scheme:light}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;
+  background-image:radial-gradient(900px 420px at 50% -120px,rgba(124,245,200,.10),transparent 70%);
+  -webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+a{color:var(--acc);text-decoration:none} a:hover{text-decoration:underline}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px clamp(16px,4vw,32px)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:-.01em}
+.logo{width:30px;height:30px;border-radius:9px;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center}
+.logo svg{width:18px;height:18px}
+.right{display:flex;align-items:center;gap:8px}
+.pill{background:var(--box);border:1px solid var(--line);padding:9px 14px;border-radius:99px;font-weight:600;font-size:14px}
+.pill:hover{border-color:var(--line2)}
+.pill.on{font-family:var(--mono);font-size:13px}
+.icon{width:38px;height:38px;border-radius:50%;background:var(--box);border:1px solid var(--line);display:grid;place-items:center;font-size:16px}
+main{max-width:480px;margin:0 auto;padding:8px 16px 48px}
+.banner{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.5;color:var(--mut)}
+.banner .acts{display:flex;flex-wrap:wrap;gap:8px}
+.banner.plain{border:0;background:none;padding:0;margin-bottom:12px}
+.seg{display:flex;gap:4px;padding:4px;background:var(--box);border-radius:12px;border:1px solid var(--line)}
+.seg button{flex:1;padding:8px 6px;border-radius:9px;font-weight:600;font-size:13px;color:var(--mut)}
+.seg button.on{background:var(--card);color:var(--text);box-shadow:0 0 0 1px var(--line2)}
+.mini{font-size:12px;font-weight:600;padding:6px 10px;border-radius:99px;border:1px solid var(--line2);background:var(--box)}
+.mini:hover{border-color:var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px}
+.tabs{display:flex;gap:4px;margin:0 0 12px;padding:4px;background:var(--box);border-radius:12px}
+.tabs button{flex:1;padding:8px;border-radius:9px;font-weight:600;font-size:14px;color:var(--mut)}
+.tabs button.on{background:var(--card);color:var(--text)}
+.box{background:var(--box);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.lbl{display:flex;justify-content:space-between;align-items:center;color:var(--mut);font-size:13px;margin-bottom:10px}
+.sel{display:inline-flex;align-items:center;gap:8px;padding:6px 10px 6px 6px;border-radius:99px;background:var(--card);border:1px solid var(--line);font-weight:600;font-size:14px;white-space:nowrap}
+.sel:hover{border-color:var(--line2)}
+.sel .car{color:var(--mut);font-size:10px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.amt{flex:1;min-width:0;background:none;border:0;color:var(--text);font-size:30px;font-weight:600;font-family:var(--mono);padding:0;width:100%}
+.amt::placeholder{color:var(--line2)}
+.amt:focus{outline:none}
+.sub{display:flex;justify-content:space-between;align-items:center;margin-top:8px;color:var(--mut);font-size:12px;min-height:20px}
+.max{font-weight:700;color:var(--acc);font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid rgba(124,245,200,.35)}
+.flipwrap{display:flex;justify-content:center;height:12px;position:relative;z-index:1}
+.flip{position:absolute;top:-14px;width:40px;height:40px;border-radius:12px;background:var(--card);border:3px solid var(--card);outline:1px solid var(--line);display:grid;place-items:center;font-size:18px}
+.flip:hover{outline-color:var(--acc)}
+.chip{width:24px;height:24px;border-radius:50%;flex:none;display:inline-grid;place-items:center;font-size:11px;font-weight:700;color:#0a0b0f;overflow:hidden;background:#aab}
+.chip img{width:100%;height:100%;object-fit:cover}
+.chip.qms{background:var(--acc);color:var(--acc-ink)} .chip.qms svg{width:15px;height:15px}
+.linkbtn{color:var(--mut);font-size:13px;margin:12px 2px 0;text-decoration:underline;text-underline-offset:3px}
+.recip{margin-top:10px;display:none}
+.recip.show{display:block}
+.recip input{width:100%;background:var(--box);border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--text);font-family:var(--mono);font-size:13px}
+.recip input.bad{border-color:var(--bad)}
+.details{margin-top:12px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:13px}
+.details .d{display:flex;justify-content:space-between;gap:12px;padding:4px 0;color:var(--mut)}
+.details .d span:last-child{color:var(--text);text-align:right;font-family:var(--mono);font-size:12.5px}
+.msg{margin-top:12px;font-size:13px;line-height:1.5;color:var(--mut);display:none}
+.msg.show{display:block}
+.msg.err{color:var(--bad)} .msg.info{color:var(--warn)}
+.primary{width:100%;margin-top:14px;padding:16px;border-radius:14px;background:var(--acc);color:var(--acc-ink);font-weight:700;font-size:16px}
+.primary:hover:not(:disabled){filter:brightness(1.06)}
+.primary:disabled{background:var(--box);color:var(--mut);cursor:not-allowed;border:1px solid var(--line)}
+.prog{margin-top:14px;border:1px solid var(--line);border-radius:14px;padding:12px}
+.prog h4{margin:0 0 8px;font-size:14px}
+.st{display:flex;gap:10px;align-items:flex-start;padding:7px 0;font-size:13.5px}
+.dot{width:20px;height:20px;border-radius:50%;flex:none;border:2px solid var(--line2);display:grid;place-items:center;font-size:11px;margin-top:1px}
+.st.active .dot{border-color:var(--acc);border-top-color:transparent;animation:spin 1s linear infinite}
+.st.done .dot{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.st.error .dot{background:var(--bad);border-color:var(--bad);color:#200}
+.st small{display:block;color:var(--mut);font-size:12px;margin-top:2px;word-break:break-all}
+.st.todo{color:var(--mut)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.st.active .dot{animation:none}}
+.hist{display:flex;flex-direction:column;gap:8px}
+.hi{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--box);font-size:13px}
+.hi .t{display:flex;justify-content:space-between;gap:8px;font-weight:600}
+.hi .m{color:var(--mut);font-size:12px;margin-top:6px;display:flex;flex-wrap:wrap;gap:6px 14px}
+.stat{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;border:1px solid var(--line2);color:var(--mut)}
+.stat.success{color:var(--ok);border-color:rgba(124,245,200,.4)}
+.stat.failure,.stat.refund{color:var(--bad);border-color:rgba(255,122,138,.4)}
+.empty{color:var(--mut);text-align:center;padding:28px 8px;font-size:14px}
+footer{max-width:480px;margin:0 auto;padding:0 16px 40px;color:var(--mut);font-size:12px;line-height:1.7;text-align:center}
+dialog{background:var(--card);color:var(--text);border:1px solid var(--line2);border-radius:20px;padding:0;width:min(420px,calc(100vw - 24px));max-height:min(620px,86vh)}
+dialog::backdrop{background:rgba(3,4,7,.72);backdrop-filter:blur(3px)}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:16px 16px 8px}
+.dh h3{margin:0;font-size:16px}
+.dx{width:32px;height:32px;border-radius:50%;background:var(--box)}
+.dbody{padding:0 16px 16px;overflow:auto;max-height:calc(min(620px,86vh) - 64px)}
+.dbody input[type=text],.dbody input[type=search]{width:100%;background:var(--box);border:1px solid var(--line);border-radius:12px;padding:11px 12px;color:var(--text);font-size:14px;margin-bottom:8px}
+.li{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px;border-radius:12px}
+.li:hover{background:var(--box)}
+.li .n{flex:1;min-width:0} .li .n b{display:block;font-size:14px} .li .n small{color:var(--mut);font-size:12px}
+.li .chip{width:32px;height:32px;font-size:13px}
+.badge{font-size:10.5px;font-weight:700;color:var(--warn);border:1px solid rgba(245,194,107,.35);border-radius:99px;padding:2px 7px;white-space:nowrap}
+.field{display:block;margin:10px 0 4px;font-size:12px;color:var(--mut)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--box);border:1px solid var(--line2);padding:10px 16px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:50;max-width:calc(100vw - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5.5 6.5h13M12 6.5V19"/></svg></div>
+    <span>Tetrix Bridge</span>
+  </div>
+  <div class="right">
+    <button class="icon" id="settingsBtn" aria-label="Settings" title="Settings">&#9881;</button>
+    <button class="pill" id="walletBtn">Connect wallet</button>
+  </div>
+</header>
+
+<main>
+  <div class="banner" id="banner" hidden></div>
+  <div class="card">
+    <nav class="tabs" aria-label="Sections">
+      <button class="on" data-tab="bridge">Bridge</button>
+      <button data-tab="history">History</button>
+    </nav>
+
+    <section id="tab-bridge">
+      <div class="box">
+        <div class="lbl"><span>From</span><button class="sel" id="fromChain" aria-label="Select source network"></button></div>
+        <div class="row">
+          <input class="amt" id="amt" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Amount to bridge">
+          <button class="sel" id="fromTok" aria-label="Select source token"></button>
+        </div>
+        <div class="sub"><span id="fromBal"></span><button class="max" id="maxBtn" hidden>MAX</button></div>
+      </div>
+      <div class="flipwrap"><button class="flip" id="flip" aria-label="Swap direction">&#8645;</button></div>
+      <div class="box" style="margin-top:0">
+        <div class="lbl"><span>To</span><button class="sel" id="toChain" aria-label="Select destination network"></button></div>
+        <div class="row">
+          <input class="amt" id="out" placeholder="0" readonly tabindex="-1" aria-label="Amount you receive">
+          <button class="sel" id="toTok" aria-label="Select destination token"></button>
+        </div>
+        <div class="sub"><span id="toBal"></span></div>
+      </div>
+
+      <button class="linkbtn" id="recipToggle">Send to a different address</button>
+      <div class="recip" id="recip"><input id="recipIn" placeholder="0x… recipient on destination network" spellcheck="false" autocomplete="off" aria-label="Recipient address"></div>
+
+      <div class="details" id="details" hidden></div>
+      <div class="msg" id="msg" role="status"></div>
+      <button class="primary" id="go" disabled>Enter an amount</button>
+      <div class="prog" id="prog" hidden></div>
+    </section>
+
+    <section id="tab-history" hidden>
+      <div class="hist" id="hist"></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  Testnet only. Tokens have no monetary value.
+</footer>
+
+<dialog id="dlg"><div class="dh"><h3 id="dlgTitle"></h3><button class="dx" id="dlgClose" aria-label="Close">&#10005;</button></div><div class="dbody" id="dlgBody"></div></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+'use strict';
+/* ---------- constants & helpers ---------- */
+const ZERO='0x0000000000000000000000000000000000000000';
+const DEAD='0x000000000000000000000000000000000000dEaD';
+const GAS_RESERVE=10n**15n; // kept back when using MAX on a native token
+const $=id=>document.getElementById(id);
+const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+const CFG={api:'https://api.testnets.relay.link'}; // quote + execution backend for non-QMS routes
+
+/* QMS bridge contracts. Filled in by `npm run deploy` (scripts/apply-config.js). */
+/* BRIDGE_CONFIG_START */const BRIDGE={"hub":{"address":"0x3E853eF91E159Dc69B79b32260948fD878361267","wqms":"0x9AA510295aC664A3d5A3182a3eFe959DE2B12c34"},"spokes":{"84532":{"bridge":"0x3E853eF91E159Dc69B79b32260948fD878361267","token":"0x3789B2a0611177bA9795fA9bB7874Ab8E2321313"},"421614":{"bridge":"0x3E853eF91E159Dc69B79b32260948fD878361267","token":"0x3789B2a0611177bA9795fA9bB7874Ab8E2321313"},"11155420":{"bridge":"0x3E853eF91E159Dc69B79b32260948fD878361267","token":"0x3789B2a0611177bA9795fA9bB7874Ab8E2321313"}}};/* BRIDGE_CONFIG_END */
+const SEL={"depositNative": "0xf0194945", "depositWQMS": "0x12a70661", "bridgeBack": "0x052bc1f3", "processed": "0xc1f0808a", "minAmount": "0x9b2cb5d8", "maxAmount": "0x5f48f393", "approve": "0x095ea7b3", "allowance": "0xdd62ed3e"};
+const TOPIC={"bridged": "0x00ecd434907c7fb39030e4c2dd3b81850ed4074e0b7143dfb58047c05d551194", "delivered": "0x412a2e49e2fbaa8106a12b6da52f3230d42664f1820de27b3a1806eecb295450"};
+const encU=v=>BigInt(v).toString(16).padStart(64,'0');
+const encA=a=>a.slice(2).toLowerCase().padStart(64,'0');
+const encB=b=>(b?'1':'0').padStart(64,'0');
+
+function h(tag,props,...kids){
+  const e=document.createElement(tag);
+  for(const[k,v]of Object.entries(props||{})){
+    if(k==='class')e.className=v;
+    else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);
+    else if(v===true)e.setAttribute(k,'');
+    else if(v!==false&&v!=null)e.setAttribute(k,v);
+  }
+  for(const c of kids.flat()){if(c==null||c===false)continue;e.append(c.nodeType?c:document.createTextNode(String(c)))}
+  return e;
+}
+function parseUnits(s,d){
+  s=String(s).trim();
+  if(!/^\d*\.?\d*$/.test(s)||s===''||s==='.')return null;
+  let[i,f='']=s.split('.');
+  if(f.length>d)f=f.slice(0,d);
+  return BigInt((i||'0')+f.padEnd(d,'0'));
+}
+function formatUnits(v,d){
+  const neg=v<0n; if(neg)v=-v;
+  const s=v.toString().padStart(d+1,'0');
+  const i=s.slice(0,s.length-d);
+  const f=d?s.slice(s.length-d).replace(/0+$/,''):'';
+  return (neg?'-':'')+i+(f?'.'+f:'');
+}
+function fmt(str,max=6){
+  if(str==null||str==='')return '';
+  const[i,f='']=String(str).split('.');
+  const ff=f.slice(0,max).replace(/0+$/,'');
+  if(!ff&&/[1-9]/.test(f))return '<0.'+'0'.repeat(max-1)+'1';
+  return i+(ff?'.'+ff:'');
+}
+const short=a=>a?a.slice(0,6)+'…'+a.slice(-4):'';
+const isAddr=a=>/^0x[0-9a-fA-F]{40}$/.test(a||'');
+const toHex=v=>'0x'+BigInt(v).toString(16);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),3200)}
+function hue(s){let x=0;for(const c of s)x=(x*31+c.charCodeAt(0))%360;return x}
+
+/* ---------- chains (data from the chainlist.org dataset) ---------- */
+const QMS={id:19480,name:'QMS Testnet',faucet:'https://faucet.testnet.qms.finance',explorer:'https://testnet.qmsscan.io'};
+const CHAINLIST_URL='https://chainid.network/chains.json'; // the dataset chainlist.org is built on
+const NETS=[
+  {id:19480,name:'QMS Testnet',rpc:'https://rpc.testnet.qms.finance',explorer:'https://testnet.qmsscan.io',sym:'QMS',cur:'QMS'},
+  {id:11155111,name:'Sepolia',rpc:'https://ethereum-sepolia-rpc.publicnode.com',explorer:'https://sepolia.etherscan.io',sym:'ETH',cur:'Ether'},
+  {id:84532,name:'Base Sepolia',rpc:'https://sepolia.base.org',explorer:'https://sepolia-explorer.base.org',sym:'ETH',cur:'Ether'},
+  {id:421614,name:'Arbitrum Sepolia',rpc:'https://arbitrum-sepolia-rpc.publicnode.com',explorer:'https://sepolia.arbiscan.io',sym:'ETH',cur:'Ether'},
+  {id:11155420,name:'OP Sepolia',rpc:'https://sepolia.optimism.io',explorer:'https://sepolia-optimism.etherscan.io',sym:'ETH',cur:'Ether'},
+  {id:80002,name:'Polygon Amoy',rpc:'https://polygon-amoy-bor-rpc.publicnode.com',explorer:'https://amoy.polygonscan.com',sym:'POL',cur:'POL'},
+  {id:97,name:'BNB Testnet',rpc:'https://bsc-testnet-rpc.publicnode.com',explorer:'https://testnet.bscscan.com',sym:'tBNB',cur:'BNB'},
+  {id:43113,name:'Avalanche Fuji',rpc:'https://api.avax-test.network/ext/bc/C/rpc',explorer:'https://testnet.snowscan.xyz',sym:'AVAX',cur:'Avalanche'}
+];
+// extra well-known testnets, added only if present in the live chainlist data
+const EXTRA_IDS=[59141,534351,1301,763373,168587773,5003,10143,300,560048,17000];
+const goodRpc=u=>/^https:\/\//.test(u)&&!/[${}]|YOUR|API_KEY/i.test(u);
+function mkChain(id,name,rpcs,explorer,sym,cur,dec){
+  const native={symbol:sym,name:cur,address:ZERO,decimals:dec||18,native:true};
+  return{id,name,rpcs,rpc:rpcs[0],explorer,icon:null,currency:native,tokens:[native],faucet:id===QMS.id?QMS.faucet:null};
+}
+function baseChains(){return sortChains(NETS.map(n=>mkChain(n.id,n.name,[n.rpc],n.explorer,n.sym,n.cur)))}
+function attachBridge(c){
+  if(c.id===QMS.id){
+    if(BRIDGE.hub.wqms&&!c.tokens.some(t=>t.address.toLowerCase()===BRIDGE.hub.wqms.toLowerCase()))
+      c.tokens.push({symbol:'WQMS',name:'Wrapped QMS',address:BRIDGE.hub.wqms,decimals:18});
+  }else if(BRIDGE.spokes[c.id]&&!c.tokens.some(t=>t.bridged)){
+    c.tokens.push({symbol:'wQMS',name:'Wrapped QMS',address:BRIDGE.spokes[c.id].token,decimals:18,bridged:true});
+  }
+}
+function sortChains(list){
+  list.forEach(attachBridge);
+  return new Map(list.sort((a,b)=>a.id===QMS.id?-1:b.id===QMS.id?1:a.name.localeCompare(b.name)).map(c=>[c.id,c]));
+}
+
+/* ---------- state ---------- */
+const S={
+  chains:new Map(),chainsSource:'',chainsAt:0,
+  from:{chainId:11155111,token:ZERO},to:{chainId:QMS.id,token:ZERO},
+  amount:'',recipient:'',useRecipient:false,
+  provider:null,account:null,walletChain:null,walletName:'',
+  bal:{},q:{state:'idle'},busy:false,quoteSeq:0,slip:LS.get('tetrixbridge.slip')||'auto',
+  history:LS.get('tetrixbridge.history.v1')||[]
+};
+const chainOf=id=>S.chains.get(id);
+const tokenOf=(cid,addr)=>{const c=chainOf(cid);return c&&(c.tokens.find(t=>t.address.toLowerCase()===String(addr).toLowerCase())||c.tokens[0])};
+const fromChain=()=>chainOf(S.from.chainId),toChain=()=>chainOf(S.to.chainId);
+const fromTok=()=>tokenOf(S.from.chainId,S.from.token),toTok=()=>tokenOf(S.to.chainId,S.to.token);
+const txUrl=(c,hash)=>c&&c.explorer?c.explorer.replace(/\/$/,'')+'/tx/'+hash:null;
+
+async function loadChains(){
+  const list=[...baseChains().values()];
+  try{
+    const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),15000);
+    const r=await fetch(CHAINLIST_URL,{signal:ctl.signal});clearTimeout(t);
+    const live=await r.json();
+    if(Array.isArray(live)){
+      const by=new Map(live.map(c=>[c.chainId,c]));
+      for(const c of list){ // add extra public RPCs as fallbacks
+        const l=by.get(c.id);
+        if(l)for(const u of(l.rpc||[]).filter(goodRpc)){if(!c.rpcs.includes(u)&&c.rpcs.length<4)c.rpcs.push(u)}
+      }
+      for(const id of EXTRA_IDS){
+        const l=by.get(id);if(!l||l.status==='deprecated')continue;
+        const rpcs=(l.rpc||[]).filter(goodRpc).slice(0,3);
+        const ex=l.explorers&&l.explorers[0]&&l.explorers[0].url;
+        if(!rpcs.length||!ex)continue;
+        const nc=l.nativeCurrency||{};
+        list.push(mkChain(id,l.name,rpcs,ex,nc.symbol||'ETH',nc.name||nc.symbol||'Ether',nc.decimals));
+      }
+    }
+  }catch(e){}
+  S.chains=sortChains(list);S.chainsAt=Date.now();
+  for(const side of['from','to']){
+    if(!chainOf(S[side].chainId)){S[side].chainId=[...S.chains.keys()][0];S[side].token=ZERO}
+    S[side].token=tokenOf(S[side].chainId,S[side].token).address;
+  }
+  if(S.from.chainId===S.to.chainId){const other=[...S.chains.keys()].find(k=>k!==S.from.chainId);S.to={chainId:other,token:ZERO}}
+  matchToken();
+}
+const bridgeReady=()=>!!(BRIDGE.hub&&BRIDGE.hub.address);
+const isSpoke=id=>!!(BRIDGE.spokes&&BRIDGE.spokes[id]);
+// 'relay' = a normal route, 'own' = QMS <-> a supported network, 'blocked' = QMS with an unsupported network
+function routeKind(){
+  const a=S.from.chainId,b=S.to.chainId;
+  if(a!==QMS.id&&b!==QMS.id)return 'relay';
+  const other=a===QMS.id?b:a;
+  return bridgeReady()&&isSpoke(other)?'own':'blocked';
+}
+const inFamily=(cid,t)=>cid===QMS.id?(t.native||(BRIDGE.hub.wqms&&t.address.toLowerCase()===BRIDGE.hub.wqms.toLowerCase())):!!t.bridged;
+function matchToken(){ // destination token follows the source token
+  const ft=fromTok(),dc=toChain();
+  let pick=null;
+  if(routeKind()==='own')pick=S.from.chainId===QMS.id?dc.tokens.find(t=>t.bridged):dc.tokens[0];
+  if(!pick)pick=dc.tokens.find(t=>t.symbol===ft.symbol);
+  S.to.token=(pick||dc.tokens[0]).address;
+}
+function fixTokens(){
+  if(routeKind()==='own'){
+    const f=fromChain();
+    if(f.id!==QMS.id)S.from.token=(f.tokens.find(t=>t.bridged)||f.tokens[0]).address;
+    else if(!inFamily(f.id,fromTok()))S.from.token=ZERO;
+  }
+  matchToken();
+}
+
+/* ---------- RPC & balances ---------- */
+async function rpc(chain,method,params=[]){
+  const urls=chain.rpcs;
+  let err;
+  for(const u of urls){
+    try{
+      const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),8000);
+      const r=await fetch(u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:ctl.signal});
+      clearTimeout(t);
+      const j=await r.json();if(j.error)throw new Error(j.error.message);return j.result;
+    }catch(e){err=e}
+  }
+  throw err||new Error('RPC unavailable');
+}
+async function getBalance(chain,tok,acct){
+  if(tok.native)return BigInt(await rpc(chain,'eth_getBalance',[acct,'latest']));
+  const data='0x70a08231'+acct.slice(2).toLowerCase().padStart(64,'0');
+  return BigInt(await rpc(chain,'eth_call',[{to:tok.address,data},'latest'])||'0x0');
+}
+const balKey=(c,t,a)=>c+':'+t.address.toLowerCase()+':'+a.toLowerCase();
+async function refreshBalances(){
+  if(!S.account)return;
+  for(const[cid,tok]of[[S.from.chainId,fromTok()],[S.to.chainId,toTok()]]){
+    const k=balKey(cid,tok,S.account);
+    try{S.bal[k]=await getBalance(chainOf(cid),tok,S.account)}catch{S.bal[k]=null}
+  }
+  renderSides();renderPrimary();
+}
+const balOf=(cid,tok)=>S.account?S.bal[balKey(cid,tok,S.account)]:undefined;
+
+/* ---------- wallet ---------- */
+const wallets=new Map();
+addEventListener('eip6963:announceProvider',e=>{if(e.detail&&e.detail.info)wallets.set(e.detail.info.uuid,e.detail)});
+dispatchEvent(new Event('eip6963:requestProvider'));
+let wHandlers=null;
+function walletList(){
+  const l=[...wallets.values()];
+  if(!l.length&&window.ethereum)l.push({info:{name:'Browser wallet',rdns:'injected'},provider:window.ethereum});
+  return l;
+}
+async function useWallet(w,silent){
+  try{
+    const accts=await w.provider.request({method:silent?'eth_accounts':'eth_requestAccounts'});
+    if(!accts||!accts.length)return false;
+    if(S.provider&&wHandlers){try{S.provider.removeListener('accountsChanged',wHandlers.a);S.provider.removeListener('chainChanged',wHandlers.c)}catch{}}
+    S.provider=w.provider;S.account=accts[0];S.walletName=w.info.name;
+    S.walletChain=parseInt(await w.provider.request({method:'eth_chainId'}),16);
+    wHandlers={
+      a:a=>{S.account=a&&a[0]||null;if(!S.account){S.provider=null}renderAll();refreshBalances()},
+      c:c=>{S.walletChain=parseInt(c,16);renderAll()}
+    };
+    w.provider.on&&w.provider.on('accountsChanged',wHandlers.a);
+    w.provider.on&&w.provider.on('chainChanged',wHandlers.c);
+    LS.set('tetrixbridge.wallet',w.info.rdns||w.info.name);
+    renderAll();refreshBalances();scheduleQuote();
+    return true;
+  }catch(e){
+    if(!silent)toast(e&&e.code===4001?'Connection rejected':'Could not connect wallet');
+    return false;
+  }
+}
+function connect(){
+  const l=walletList();
+  if(!l.length){toast('No wallet detected. Install a browser wallet and reload.');return}
+  if(l.length===1)return useWallet(l[0]);
+  const body=h('div',{});
+  for(const w of l)body.append(h('button',{class:'li',onclick:()=>{$('dlg').close();useWallet(w)}},
+    w.info.icon?h('img',{src:w.info.icon,width:32,height:32,alt:'',style:'border-radius:8px'}):h('span',{class:'chip'},'W'),
+    h('span',{class:'n'},h('b',{},w.info.name))));
+  openDialog('Select wallet',body);
+}
+function walletMenu(){
+  const body=h('div',{},
+    h('p',{style:'font-family:var(--mono);font-size:13px;word-break:break-all;margin:0 0 4px'},S.account),
+    h('p',{style:'color:var(--mut);font-size:12px;margin:0 0 12px'},S.walletName+(S.walletChain?' · chain '+S.walletChain:'')),
+    h('div',{style:'display:flex;gap:8px'},
+      h('button',{class:'mini',onclick:()=>{navigator.clipboard&&navigator.clipboard.writeText(S.account);toast('Address copied')}},'Copy address'),
+      h('button',{class:'mini',onclick:()=>{S.account=null;S.provider=null;LS.set('tetrixbridge.wallet',null);$('dlg').close();renderAll();scheduleQuote()}},'Disconnect')));
+  openDialog('Wallet',body);
+}
+async function ensureChain(id){
+  const cur=parseInt(await S.provider.request({method:'eth_chainId'}),16);
+  if(cur===id)return;
+  const hex='0x'+id.toString(16);
+  try{await S.provider.request({method:'wallet_switchEthereumChain',params:[{chainId:hex}]})}
+  catch(e){
+    if(e&&(e.code===4902||e.code===-32603||/unrecognized|not added|add/i.test(e.message||''))){await addChain(id)}
+    else throw e;
+  }
+  S.walletChain=parseInt(await S.provider.request({method:'eth_chainId'}),16);
+  if(S.walletChain!==id)throw new Error('Switch your wallet to '+chainOf(id).name+' to continue.');
+}
+async function addChain(id){
+  const c=chainOf(id);
+  await S.provider.request({method:'wallet_addEthereumChain',params:[{
+    chainId:'0x'+id.toString(16),chainName:c.name,
+    nativeCurrency:{name:c.currency.name,symbol:c.currency.symbol,decimals:c.currency.decimals},
+    rpcUrls:c.rpcs.slice(0,3),blockExplorerUrls:c.explorer?[c.explorer]:undefined
+  }]});
+}
+async function addQms(){
+  if(!S.provider){await connect();if(!S.provider)return}
+  try{await addChain(QMS.id);toast('QMS Testnet added')}catch(e){if(!(e&&e.code===4001))toast('Could not add network')}
+}
+
+/* ---------- quotes ---------- */
+let qTimer=null;
+function scheduleQuote(){
+  clearTimeout(qTimer);
+  S.quoteSeq++;
+  const f=fromTok(),kind=routeKind();
+  if(kind==='blocked'){
+    S.q={state:'unavailable',msg:bridgeReady()?'QMS bridging is available with Sepolia, Base Sepolia, Arbitrum Sepolia and OP Sepolia.':'QMS bridging isn’t available yet.'};
+    renderQuote();return;
+  }
+  const wei=S.amount?parseUnits(S.amount,f.decimals):null;
+  if(!wei||wei===0n){S.q={state:'idle'};renderQuote();return}
+  if(S.useRecipient&&S.recipient&&!isAddr(S.recipient)){S.q={state:'idle'};renderQuote();return}
+  S.q={state:'loading'};renderQuote();
+  const seq=S.quoteSeq;
+  qTimer=setTimeout(()=>kind==='own'?runOwnQuote(seq,wei):runQuote(seq,wei),kind==='own'?250:450);
+}
+async function runOwnQuote(seq,wei){
+  const from=fromChain(),to=toChain(),toQms=to.id===QMS.id;
+  const src=toQms?BRIDGE.spokes[from.id].bridge:BRIDGE.hub.address;
+  let q;
+  try{
+    const calls=[rpc(from,'eth_call',[{to:src,data:SEL.minAmount},'latest']),rpc(from,'eth_call',[{to:src,data:SEL.maxAmount},'latest'])];
+    if(toQms)calls.push(rpc(to,'eth_getBalance',[BRIDGE.hub.address,'latest']));
+    const[mn,mx,pool]=await Promise.all(calls);
+    const min=BigInt(mn),max=BigInt(mx);
+    if(wei<min)q={state:'error',error:'Minimum amount is '+fmt(formatUnits(min,18))+' QMS.'};
+    else if(wei>max)q={state:'error',error:'Maximum per transfer is '+fmt(formatUnits(max,18))+' QMS.'};
+    else if(toQms&&pool&&wei>BigInt(pool))q={state:'error',error:'Not enough QMS liquidity on QMS Testnet right now. Try a smaller amount.'};
+    else q={state:'ready',own:true,out:formatUnits(wei,18)};
+  }catch(e){q={state:'error',error:'Couldn’t reach the network. Check your connection and try again.'}}
+  if(seq!==S.quoteSeq)return;
+  S.q=q;renderQuote();
+}
+async function runQuote(seq,wei){
+  const body={
+    user:S.account||DEAD,originChainId:S.from.chainId,destinationChainId:S.to.chainId,
+    originCurrency:S.from.token,destinationCurrency:S.to.token,amount:wei.toString(),tradeType:'EXACT_INPUT'
+  };
+  if(S.slip!=='auto')body.slippageTolerance=String(S.slip);
+  if(S.useRecipient&&isAddr(S.recipient))body.recipient=S.recipient;
+  try{
+    const r=await fetch(CFG.api+'/quote/v2',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json().catch(()=>({}));
+    if(seq!==S.quoteSeq)return;
+    if(!r.ok||!j.steps){S.q={state:'error',error:friendly(j,r.status)};}
+    else S.q={state:'ready',quote:j};
+  }catch(e){
+    if(seq!==S.quoteSeq)return;
+    S.q={state:'error',error:'Couldn’t fetch a quote. Check your connection and try again.'};
+  }
+  renderQuote();
+}
+function friendly(j,status){
+  const m=(j&&(j.message||j.error))||'';
+  if(/insufficient|balance/i.test(m)&&!S.account)return 'Connect your wallet to get an exact quote for this amount.';
+  return 'No route is available for this pair or amount right now.';
+}
+const outAmount=q=>{
+  const o=q&&q.details&&q.details.currencyOut;if(!o)return '';
+  return o.amountFormatted||(o.amount?formatUnits(BigInt(o.amount),toTok().decimals):'');
+};
+
+/* ---------- rendering ---------- */
+function chip(c,tok){
+  if(c&&c.id===QMS.id&&!c.icon)return h('span',{class:'chip qms'},qmsSvg());
+  const label=(tok?tok.symbol:c.name)[0]||'?';
+  const el=h('span',{class:'chip',style:'background:hsl('+hue(tok?tok.symbol:c.name)+' 60% 70%)'},label);
+  const url=tok?tok.logo:c&&c.icon;
+  if(url){const img=h('img',{src:url,alt:'',loading:'lazy'});img.addEventListener('error',()=>img.remove());el.append(img)}
+  return el;
+}
+function qmsSvg(){const d=document.createElement('span');d.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M15 15l4.5 4.5"/></svg>';return d.firstChild}
+function renderSides(){
+  const fc=fromChain(),tc=toChain(),ft=fromTok(),tt=toTok();
+  const fill=(btn,kids)=>{btn.replaceChildren(...kids)};
+  fill($('fromChain'),[chip(fc),fc.name,h('span',{class:'car'},'▼')]);
+  fill($('toChain'),[chip(tc),tc.name,h('span',{class:'car'},'▼')]);
+  fill($('fromTok'),[chip(null,ft),ft.symbol,h('span',{class:'car'},'▼')]);
+  fill($('toTok'),[chip(null,tt),tt.symbol,h('span',{class:'car'},'▼')]);
+  const fb=balOf(S.from.chainId,ft),tb=balOf(S.to.chainId,tt);
+  $('fromBal').textContent=S.account?(fb==null?'Balance: —':'Balance: '+fmt(formatUnits(fb,ft.decimals))+' '+ft.symbol):'';
+  $('toBal').textContent=S.account?(tb==null?'Balance: —':'Balance: '+fmt(formatUnits(tb,tt.decimals))+' '+tt.symbol):'';
+  $('maxBtn').hidden=!(S.account&&fb);
+  $('walletBtn').textContent=S.account?short(S.account):'Connect wallet';
+  $('walletBtn').classList.toggle('on',!!S.account);
+}
+function renderBanner(){
+  const el=$('banner');
+  el.hidden=false;el.className='banner plain';el.replaceChildren(
+    h('div',{class:'acts'},
+      h('button',{class:'mini',onclick:addQms},'Add QMS Testnet to wallet'),
+      h('a',{class:'mini',href:QMS.faucet,target:'_blank',rel:'noopener'},'Faucet'),
+      h('a',{class:'mini',href:QMS.explorer,target:'_blank',rel:'noopener'},'Explorer')));
+}
+function renderQuote(){
+  const q=S.q,det=$('details'),msg=$('msg');
+  det.hidden=true;msg.className='msg';msg.textContent='';
+  $('out').value=q.state==='ready'?fmt(q.own?q.out:outAmount(q.quote),8):'';
+  if(q.state==='error'){msg.className='msg show err';msg.textContent=q.error}
+  else if(q.state==='unavailable'){msg.className='msg show info';msg.textContent=q.msg}
+  else if(q.state==='ready'&&q.own){
+    const rows=[['You receive',fmt(q.out,8)+' '+toTok().symbol],['Estimated time','~1–2 min'],['Bridge fee','None']];
+    det.replaceChildren(...rows.map(r=>h('div',{class:'d'},h('span',{},r[0]),h('span',{},r[1]))));
+    det.hidden=false;
+  }
+  else if(q.state==='ready'){
+    const d=q.quote.details||{},f=q.quote.fees||{};
+    const money=x=>x&&x.amountFormatted?fmt(x.amountFormatted,6)+' '+(x.currency&&x.currency.symbol||'')+(x.amountUsd&&+x.amountUsd>0?' ($'+(+x.amountUsd).toFixed(2)+')':''):null;
+    const rows=[
+      ['You receive',fmt(outAmount(q.quote),8)+' '+toTok().symbol],
+      ['Estimated time',d.timeEstimate!=null?'~'+d.timeEstimate+'s':null],
+      ['Network fee',money(f.gas)],
+      ['Bridge fee',money(f.relayer)],
+      ['Total impact',d.totalImpact&&d.totalImpact.percent!=null?(+d.totalImpact.percent).toFixed(2)+'%':null],
+      ['Rate',d.rate?'1 '+fromTok().symbol+' = '+fmt(String(d.rate),6)+' '+toTok().symbol:null]
+    ].filter(r=>r[1]);
+    det.replaceChildren(...rows.map(r=>h('div',{class:'d'},h('span',{},r[0]),h('span',{},r[1]))));
+    det.hidden=!rows.length;
+  }
+  renderPrimary();
+}
+function primaryState(){
+  if(S.busy)return{label:'Working…',off:true};
+  if(S.q.state==='unavailable')return{label:'Route unavailable',off:true};
+  if(!S.account)return{label:'Connect wallet',off:false,act:connect};
+  const f=fromTok(),wei=S.amount?parseUnits(S.amount,f.decimals):null;
+  if(!wei||wei===0n)return{label:'Enter an amount',off:true};
+  if(S.useRecipient&&!isAddr(S.recipient))return{label:'Enter a valid recipient',off:true};
+  const b=balOf(S.from.chainId,f);
+  if(b!=null&&wei>b)return{label:'Insufficient '+f.symbol,off:true};
+  if(S.q.state==='loading')return{label:'Fetching quote…',off:true};
+  if(S.q.state==='error')return{label:'Can’t bridge this amount',off:true};
+  if(S.q.state!=='ready')return{label:'Enter an amount',off:true};
+  return{label:'Bridge to '+toChain().name,off:false,act:doBridge};
+}
+function renderPrimary(){const p=primaryState(),b=$('go');b.textContent=p.label;b.disabled=p.off;b.onclick=p.act||null}
+function renderAll(){renderSides();renderBanner();renderQuote();renderHistory()}
+
+/* ---------- pickers ---------- */
+function openDialog(title,body,searchable,onSearch){
+  $('dlgTitle').textContent=title;
+  const wrap=$('dlgBody');wrap.replaceChildren();
+  if(searchable){const i=h('input',{type:'search',placeholder:'Search',autocomplete:'off','aria-label':'Search'});i.addEventListener('input',()=>onSearch(i.value.toLowerCase()));wrap.append(i)}
+  wrap.append(body);
+  if(!$('dlg').open)$('dlg').showModal();
+}
+function pickChain(side){
+  const body=h('div',{});
+  for(const c of S.chains.values()){
+    body.append(h('button',{class:'li',onclick:()=>{$('dlg').close();setChain(side,c.id)}},
+      chip(c),h('span',{class:'n'},h('b',{},c.name),h('small',{},'Chain '+c.id))));
+  }
+  openDialog(side==='from'?'From network':'To network',body);
+}
+function setChain(side,id){
+  const other=side==='from'?'to':'from';
+  if(S[other].chainId===id){flip();return}
+  S[side]={chainId:id,token:chainOf(id).currency.address};
+  fixTokens();
+  afterChange();
+}
+function pickToken(side){
+  const cid=S[side].chainId;
+  let list=chainOf(cid).tokens;
+  if(routeKind()==='own')list=list.filter(t=>inFamily(cid,t));
+  const ul=h('div',{});
+  const draw=q=>{
+    ul.replaceChildren(...list.filter(t=>!q||t.symbol.toLowerCase().includes(q)||t.name.toLowerCase().includes(q)).map(t=>
+      h('button',{class:'li',onclick:()=>{$('dlg').close();S[side].token=t.address;if(side==='from')matchToken();afterChange()}},
+        chip(null,t),h('span',{class:'n'},h('b',{},t.symbol),h('small',{},t.name)))));
+  };
+  draw('');
+  openDialog('Select token',ul,list.length>6,draw);
+}
+function flip(){
+  const a=S.from,b=S.to;
+  S.from={chainId:b.chainId,token:tokenOf(b.chainId,b.token).address};
+  S.to={chainId:a.chainId,token:tokenOf(a.chainId,a.token).address};
+  afterChange();
+}
+function afterChange(){renderSides();refreshBalances();scheduleQuote()}
+
+/* ---------- execution ---------- */
+let steps=[];
+function drawProgress(title){
+  const p=$('prog');p.hidden=false;
+  p.replaceChildren(h('h4',{},title||'Progress'),...steps.map(s=>
+    h('div',{class:'st '+s.state},h('span',{class:'dot'},s.state==='done'?'✓':s.state==='error'?'!':''),
+      h('div',{},s.label,s.detail?h('small',{},s.detail):null,s.link?h('small',{},h('a',{href:s.link,target:'_blank',rel:'noopener'},'View on explorer')):null))));
+}
+function mark(i,state,detail,link){const s=steps[i];if(!s)return;s.state=state;if(detail!==undefined)s.detail=detail;if(link!==undefined)s.link=link;drawProgress()}
+const STEP_LABEL={approve:'Approve token',deposit:'Confirm bridge in wallet',swap:'Confirm in wallet',send:'Confirm in wallet',authorize:'Sign authorization',authorize1:'Sign authorization',authorize2:'Sign authorization'};
+const STATUS_TXT={waiting:'Waiting for deposit',depositing:'Depositing',pending:'Filling on destination',submitted:'Fill submitted',success:'Complete',delayed:'Delayed, still processing',refund:'Refunded',failure:'Failed'};
+
+async function waitReceipt(hash,chainId){
+  for(let i=0;i<90;i++){
+    let r=null;
+    try{r=await S.provider.request({method:'eth_getTransactionReceipt',params:[hash]})}catch{}
+    if(!r){try{r=await rpc(chainOf(chainId),'eth_getTransactionReceipt',[hash])}catch{}}
+    if(r){if(r.status==='0x0')throw new Error('Transaction reverted on '+chainOf(chainId).name);return r}
+    await sleep(2000);
+  }
+  throw new Error('Timed out waiting for confirmation');
+}
+async function getStatus(endpoint){
+  const r=await fetch(endpoint.startsWith('http')?endpoint:CFG.api+endpoint);
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+async function pollStatus(endpoint,onTick){
+  for(let i=0;i<150;i++){
+    let st=null;
+    try{st=await getStatus(endpoint)}catch{}
+    if(st){
+      onTick&&onTick(st);
+      if(st.status==='success')return st;
+      if(st.status==='failure'||st.status==='refund')throw Object.assign(new Error('Bridge reported: '+(STATUS_TXT[st.status]||st.status)),{status:st});
+    }
+    await sleep(2000);
+  }
+  throw new Error('Still processing after 5 minutes. Check History for updates.');
+}
+function typedData(sg){
+  const dom=sg.domain||{},types={...(sg.types||{})};
+  if(!types.EIP712Domain){
+    const f=[['name','string'],['version','string'],['chainId','uint256'],['verifyingContract','address'],['salt','bytes32']];
+    types.EIP712Domain=f.filter(x=>dom[x[0]]!==undefined).map(x=>({name:x[0],type:x[1]}));
+  }
+  return JSON.stringify({domain:dom,types,primaryType:sg.primaryType,message:sg.value});
+}
+function saveHistory(){LS.set('tetrixbridge.history.v1',S.history.slice(0,40))}
+function upsertHistory(e){
+  const i=S.history.findIndex(x=>x.id===e.id);
+  if(i>=0)S.history[i]={...S.history[i],...e};else S.history.unshift(e);
+  saveHistory();renderHistory();
+}
+
+async function doBridgeOwn(){
+  if(S.busy)return;
+  const ft=fromTok(),tt=toTok(),fc=fromChain(),tc=toChain();
+  const wei=parseUnits(S.amount,ft.decimals);
+  const recip=S.useRecipient&&isAddr(S.recipient)?S.recipient:S.account;
+  const toQms=tc.id===QMS.id;
+  const bridge=toQms?BRIDGE.spokes[fc.id].bridge:BRIDGE.hub.address;
+  const dest=toQms?BRIDGE.hub.address:BRIDGE.spokes[tc.id].bridge;
+  const needApprove=!toQms&&!ft.native; // depositing WQMS needs an allowance
+  const amtIn=S.amount,amtOut=fmt(S.q.out,8);
+  S.busy=true;renderPrimary();
+  steps=[];
+  if(needApprove)steps.push({label:'Approve WQMS',state:'todo'});
+  steps.push({label:toQms?'Confirm in wallet':'Confirm bridge in wallet',state:'todo'});
+  steps.push({label:'Funds arrive on '+tc.name,state:'todo'});
+  drawProgress('Bridging '+amtIn+' '+ft.symbol+' → '+tt.symbol);
+  let cur=0,id=null;
+  try{
+    await ensureChain(fc.id);
+    if(needApprove){
+      mark(0,'active');
+      const al=BigInt(await rpc(fc,'eth_call',[{to:ft.address,data:SEL.allowance+encA(S.account)+encA(bridge)},'latest'])||'0x0');
+      if(al<wei){
+        const ah=await S.provider.request({method:'eth_sendTransaction',params:[{from:S.account,to:ft.address,data:SEL.approve+encA(bridge)+encU(wei),value:'0x0'}]});
+        mark(0,'active','Submitted '+short(ah),txUrl(fc,ah));
+        await waitReceipt(ah,fc.id);
+      }
+      mark(0,'done');cur=1;
+    }
+    mark(cur,'active');
+    let data,value='0x0';
+    if(toQms)data=SEL.bridgeBack+encU(wei)+encA(recip)+encB(tt.native);
+    else if(ft.native){data=SEL.depositNative+encU(tc.id)+encA(recip);value=toHex(wei)}
+    else data=SEL.depositWQMS+encU(wei)+encU(tc.id)+encA(recip);
+    const hash=await S.provider.request({method:'eth_sendTransaction',params:[{from:S.account,to:bridge,data,value}]});
+    mark(cur,'active','Submitted '+short(hash),txUrl(fc,hash));
+    const rc=await waitReceipt(hash,fc.id);
+    const log=(rc.logs||[]).find(l=>l.address.toLowerCase()===bridge.toLowerCase()&&l.topics[0]===TOPIC.bridged);
+    if(!log)throw new Error('Bridge event not found in the transaction');
+    id=log.topics[1];
+    upsertHistory({id,own:true,ts:Date.now(),from:fc.name,to:tc.name,fromId:fc.id,toId:tc.id,sym:ft.symbol,outSym:tt.symbol,amtIn,amtOut,status:'pending',txIn:hash});
+    mark(cur,'done');cur++;
+    mark(cur,'active','Waiting for delivery');
+    let head0='0x0';try{head0=toHex(Math.max(0,parseInt(await rpc(tc,'eth_blockNumber'),16)-5))}catch{}
+    let done=false;
+    for(let i=0;i<225&&!done;i++){ // up to ~15 min
+      try{done=BigInt(await rpc(tc,'eth_call',[{to:dest,data:SEL.processed+id.slice(2)},'latest']))===1n}catch{}
+      if(!done)await sleep(4000);
+    }
+    if(!done)throw Object.assign(new Error('Still processing. It will complete on its own; check History for updates.'),{pending:true});
+    let outHash=null;
+    try{const ls=await rpc(tc,'eth_getLogs',[{address:dest,topics:[TOPIC.delivered,id],fromBlock:head0,toBlock:'latest'}]);outHash=ls&&ls[0]&&ls[0].transactionHash}catch{}
+    mark(cur,'done','Received ~'+amtOut+' '+tt.symbol,outHash?txUrl(tc,outHash):undefined);
+    upsertHistory({id,status:'success',txOut:outHash||null});
+    toast('Bridge complete');
+    $('prog').append(h('button',{class:'mini',style:'margin-top:8px',onclick:()=>{$('prog').hidden=true;S.amount='';$('amt').value='';S.q={state:'idle'};renderQuote()}},'New bridge'));
+  }catch(e){
+    const rej=e&&(e.code===4001||/user rejected|denied/i.test(e.message||''));
+    mark(cur,e&&e.pending?'active':'error',rej?'Rejected in wallet':(e&&e.message)||'Something went wrong');
+  }finally{
+    S.busy=false;renderPrimary();refreshBalances();
+  }
+}
+
+async function doBridge(){
+  if(S.q.own)return doBridgeOwn();
+  const q=S.q.quote;if(!q||S.busy)return;
+  const ft=fromTok(),tt=toTok(),fc=fromChain(),tc=toChain();
+  const amtIn=S.amount,amtOut=fmt(outAmount(q),8);
+  S.busy=true;renderPrimary();
+  steps=q.steps.map(s=>({label:STEP_LABEL[s.id]||s.description||s.id,state:'todo'}));
+  steps.push({label:'Funds arrive on '+tc.name,state:'todo'});
+  drawProgress('Bridging '+amtIn+' '+ft.symbol+' → '+tt.symbol);
+  let requestId=null,originHash=null,final=null,cur=0;
+  try{
+    for(let si=0;si<q.steps.length;si++){
+      cur=si;const step=q.steps[si];mark(si,'active');
+      if(step.requestId)requestId=step.requestId;
+      for(const item of step.items||[]){
+        if(item.status==='complete')continue;
+        if(step.kind==='transaction'){
+          const d=item.data,cid=Number(d.chainId);
+          await ensureChain(cid);
+          const tx={from:S.account,to:d.to,data:d.data||'0x',value:toHex(d.value||'0')};
+          if(d.maxFeePerGas)tx.maxFeePerGas=toHex(d.maxFeePerGas);
+          if(d.maxPriorityFeePerGas)tx.maxPriorityFeePerGas=toHex(d.maxPriorityFeePerGas);
+          const hash=await S.provider.request({method:'eth_sendTransaction',params:[tx]});
+          mark(si,'active','Submitted '+short(hash),txUrl(chainOf(cid),hash));
+          await waitReceipt(hash,cid);
+          originHash=hash;
+          if(requestId)upsertHistory({id:requestId,ts:Date.now(),from:fc.name,to:tc.name,fromId:fc.id,toId:tc.id,sym:ft.symbol,outSym:tt.symbol,amtIn,amtOut,status:'pending',txIn:hash});
+        }else if(step.kind==='signature'){
+          const sg=item.data.sign,post=item.data.post;
+          if(sg.chainId)await ensureChain(Number(sg.chainId));
+          const sig=sg.signatureKind==='eip191'
+            ?await S.provider.request({method:'personal_sign',params:[sg.message,S.account]})
+            :await S.provider.request({method:'eth_signTypedData_v4',params:[S.account,typedData(sg)]});
+          if(post){
+            const sep=post.endpoint.includes('?')?'&':'?';
+            const r=await fetch(CFG.api+post.endpoint+sep+'signature='+sig,{method:post.method||'POST',headers:{'content-type':'application/json'},body:post.body?JSON.stringify(post.body):undefined});
+            if(!r.ok)throw new Error('Signature rejected (HTTP '+r.status+')');
+          }
+        }
+        if(item.check&&item.check.endpoint){
+          final=await pollStatus(item.check.endpoint,st=>mark(si,'active',STATUS_TXT[st.status]||st.status));
+        }
+      }
+      mark(si,'done');
+    }
+    cur=steps.length-1;mark(cur,'active','Waiting for fill');
+    if(!final&&requestId)final=await pollStatus('/intents/status/v3?requestId='+requestId,st=>mark(cur,'active',STATUS_TXT[st.status]||st.status));
+    const outHash=final&&(final.txHashes||[])[0];
+    mark(cur,'done','Received ~'+amtOut+' '+tt.symbol,outHash?txUrl(tc,outHash):undefined);
+    if(requestId)upsertHistory({id:requestId,status:'success',txOut:outHash||null});
+    toast('Bridge complete');
+    $('prog').append(h('button',{class:'mini',style:'margin-top:8px',onclick:()=>{$('prog').hidden=true;S.amount='';$('amt').value='';S.q={state:'idle'};renderQuote()}},'New bridge'));
+  }catch(e){
+    const rej=e&&(e.code===4001||/user rejected|denied/i.test(e.message||''));
+    mark(cur,'error',rej?'Rejected in wallet':(e&&e.message)||'Something went wrong');
+    if(requestId&&!rej)upsertHistory({id:requestId,status:(e&&e.status&&e.status.status)||'failure'});
+  }finally{
+    S.busy=false;renderPrimary();refreshBalances();
+  }
+}
+
+/* ---------- history ---------- */
+function renderHistory(){
+  const el=$('hist');
+  if(!S.history.length){el.replaceChildren(h('div',{class:'empty'},'No bridges yet. Completed and pending transfers from this browser show up here.'));return}
+  el.replaceChildren(...S.history.map(x=>{
+    const fc=chainOf(x.fromId),tc=chainOf(x.toId);
+    const li=txUrl(fc,x.txIn),lo=x.txOut&&txUrl(tc,x.txOut);
+    return h('div',{class:'hi'},
+      h('div',{class:'t'},h('span',{},x.amtIn+' '+x.sym+' → '+x.amtOut+' '+x.outSym),h('span',{class:'stat '+x.status},STATUS_TXT[x.status]||x.status)),
+      h('div',{class:'m'},h('span',{},x.from+' → '+x.to),h('span',{},new Date(x.ts).toLocaleString()),
+        li?h('a',{href:li,target:'_blank',rel:'noopener'},'Source tx'):null,lo?h('a',{href:lo,target:'_blank',rel:'noopener'},'Fill tx'):null));
+  }));
+}
+async function refreshHistory(){
+  let changed=false;
+  for(const x of S.history){
+    if(x.status==='success'||x.status==='failure'||x.status==='refund')continue;
+    if(x.own){
+      try{
+        const dc=chainOf(x.toId),dest=x.toId===QMS.id?BRIDGE.hub.address:(BRIDGE.spokes[x.toId]||{}).bridge;
+        if(dc&&dest&&BigInt(await rpc(dc,'eth_call',[{to:dest,data:SEL.processed+x.id.slice(2)},'latest']))===1n){x.status='success';changed=true}
+      }catch{}
+      continue;
+    }
+    try{
+      const st=await getStatus('/intents/status/v3?requestId='+x.id);
+      if(st&&st.status&&st.status!==x.status){x.status=st.status;if(st.txHashes&&st.txHashes[0])x.txOut=st.txHashes[0];changed=true}
+    }catch{}
+  }
+  if(changed){saveHistory();renderHistory()}
+}
+
+/* ---------- settings ---------- */
+const THEMES=[['dark','Dark'],['light','Light'],['system','System']];
+const SLIP=[['auto','Auto'],['50','0.5%'],['100','1%'],['300','3%']];
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);LS.set('tetrixbridge.theme',t)}
+function setSlip(v){S.slip=v;LS.set('tetrixbridge.slip',v);scheduleQuote()}
+function openSettings(){
+  const body=h('div',{});
+  const seg=(items,active,on)=>h('div',{class:'seg',role:'group'},items.map(([v,l])=>h('button',{class:v===active?'on':'','aria-pressed':v===active,onclick:()=>on(v)},l)));
+  const draw=()=>{
+    const theme=LS.get('tetrixbridge.theme')||'dark';
+    const preset=SLIP.some(x=>x[0]===S.slip);
+    const inp=h('input',{type:'text',inputmode:'decimal',placeholder:'Custom %',value:preset?'':String(+S.slip/100),'aria-label':'Custom slippage percent'});
+    inp.addEventListener('change',()=>{
+      const p=parseFloat(inp.value.replace(',','.'));
+      if(!(p>=0.01&&p<=50)){toast('Enter a value from 0.01 to 50');return}
+      setSlip(String(Math.round(p*100)));draw();
+    });
+    body.replaceChildren(
+      h('label',{class:'field'},'Slippage tolerance'),
+      seg(SLIP,S.slip,v=>{setSlip(v);draw()}),
+      h('div',{style:'margin-top:8px'},inp),
+      S.slip!=='auto'&&+S.slip>500?h('p',{style:'color:var(--warn);font-size:12px;margin:6px 0 0'},'High slippage can lead to an unfavourable rate.'):null,
+      h('label',{class:'field',style:'margin-top:16px'},'Theme'),
+      seg(THEMES,theme,v=>{applyTheme(v);draw()}));
+  };
+  draw();openDialog('Settings',body);
+}
+
+/* ---------- wiring ---------- */
+$('fromChain').onclick=()=>pickChain('from');
+$('toChain').onclick=()=>pickChain('to');
+$('fromTok').onclick=()=>pickToken('from');
+$('toTok').onclick=()=>pickToken('to');
+$('flip').onclick=flip;
+$('walletBtn').onclick=()=>S.account?walletMenu():connect();
+$('settingsBtn').onclick=openSettings;
+$('dlgClose').onclick=()=>$('dlg').close();
+$('dlg').addEventListener('click',e=>{if(e.target===$('dlg'))$('dlg').close()});
+$('amt').addEventListener('input',e=>{
+  let v=e.target.value.replace(',','.').replace(/[^\d.]/g,'');
+  const p=v.split('.');if(p.length>2)v=p[0]+'.'+p.slice(1).join('');
+  const d=fromTok().decimals;if(p[1]&&p[1].length>d)v=p[0]+'.'+p[1].slice(0,d);
+  e.target.value=v;S.amount=v;scheduleQuote();
+});
+$('maxBtn').onclick=()=>{
+  const f=fromTok(),b=balOf(S.from.chainId,f);if(!b)return;
+  let v=b;if(f.native)v=b>GAS_RESERVE?b-GAS_RESERVE:0n;
+  S.amount=formatUnits(v,f.decimals);$('amt').value=S.amount;scheduleQuote();
+};
+$('recipToggle').onclick=()=>{
+  S.useRecipient=!S.useRecipient;
+  $('recip').classList.toggle('show',S.useRecipient);
+  $('recipToggle').textContent=S.useRecipient?'Send to my connected wallet':'Send to a different address';
+  if(!S.useRecipient){S.recipient='';$('recipIn').value=''}
+  scheduleQuote();
+};
+$('recipIn').addEventListener('input',e=>{
+  S.recipient=e.target.value.trim();
+  e.target.classList.toggle('bad',!!S.recipient&&!isAddr(S.recipient));
+  scheduleQuote();
+});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  $('tab-bridge').hidden=b.dataset.tab!=='bridge';$('tab-history').hidden=b.dataset.tab!=='history';
+  if(b.dataset.tab==='history')refreshHistory();
+});
+(async function init(){
+  // placeholder render so the shell never looks empty while chains load
+  S.chains=baseChains();renderAll();
+  await loadChains();
+  renderAll();scheduleQuote();
+  setTimeout(async()=>{
+    const saved=LS.get('tetrixbridge.wallet');
+    if(saved){const w=walletList().find(x=>(x.info.rdns||x.info.name)===saved);if(w)await useWallet(w,true)}
+  },350);
+  refreshHistory();
+})();
+</script>
+</body>
+</html>
