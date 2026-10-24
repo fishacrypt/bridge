@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tetrix Bridge</title>
+<title>Qros Bridge</title>
 <meta name="description" content="Bridge between test networks, including QMS Testnet.">
 <script>try{document.documentElement.setAttribute("data-theme",JSON.parse(localStorage.getItem("tetrixbridge.theme"))||"dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
 <style>
@@ -110,6 +110,32 @@ dialog::backdrop{background:rgba(3,4,7,.72);backdrop-filter:blur(3px)}
 .li:hover{background:var(--box)}
 .li .n{flex:1;min-width:0} .li .n b{display:block;font-size:14px} .li .n small{color:var(--mut);font-size:12px}
 .li .chip{width:32px;height:32px;font-size:13px}
+.network-section{
+  margin:8px 0 6px;
+  padding:8px 10px;
+  color:var(--mut);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+.network-section:not(:first-child){
+  margin-top:16px;
+  border-top:1px solid var(--line);
+  padding-top:16px;
+}
+.li.unavailable{
+  opacity:.42;
+  cursor:not-allowed;
+}
+.li.unavailable:hover{
+  background:transparent;
+}
+.li .route-status{
+  color:var(--mut);
+  font-size:11px;
+  white-space:nowrap;
+}
 .badge{font-size:10.5px;font-weight:700;color:var(--warn);border:1px solid rgba(245,194,107,.35);border-radius:99px;padding:2px 7px;white-space:nowrap}
 .field{display:block;margin:10px 0 4px;font-size:12px;color:var(--mut)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--box);border:1px solid var(--line2);padding:10px 16px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:50;max-width:calc(100vw - 32px)}
@@ -120,7 +146,7 @@ dialog::backdrop{background:rgba(3,4,7,.72);backdrop-filter:blur(3px)}
 <header class="top">
   <div class="brand">
     <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5.5 6.5h13M12 6.5V19"/></svg></div>
-    <span>Tetrix Bridge</span>
+    <span>Qros Bridge</span>
   </div>
   <div class="right">
     <button class="icon" id="settingsBtn" aria-label="Settings" title="Settings">&#9881;</button>
@@ -156,7 +182,7 @@ dialog::backdrop{background:rgba(3,4,7,.72);backdrop-filter:blur(3px)}
       </div>
 
       <button class="linkbtn" id="recipToggle">Send to a different address</button>
-      <div class="recip" id="recip"><input id="recipIn" placeholder="0x… recipient on destination network" spellcheck="false" autocomplete="off" aria-label="Recipient address"></div>
+      <div class="recip" id="recip"><input id="recipIn" placeholder="0xâ€¦ recipient on destination network" spellcheck="false" autocomplete="off" aria-label="Recipient address"></div>
 
       <div class="details" id="details" hidden></div>
       <div class="msg" id="msg" role="status"></div>
@@ -188,7 +214,7 @@ const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch{return nul
 const CFG={api:'https://api.testnets.relay.link'}; // quote + execution backend for non-QMS routes
 
 /* QMS bridge contracts. Filled in by `npm run deploy` (scripts/apply-config.js). */
-/* BRIDGE_CONFIG_START */const BRIDGE={"hub":{"address":"0x3E853eF91E159Dc69B79b32260948fD878361267","wqms":"0x9AA510295aC664A3d5A3182a3eFe959DE2B12c34"},"spokes":{"84532":{"bridge":"0x3E853eF91E159Dc69B79b32260948fD878361267","token":"0x3789B2a0611177bA9795fA9bB7874Ab8E2321313"},"421614":{"bridge":"0x3E853eF91E159Dc69B79b32260948fD878361267","token":"0x3789B2a0611177bA9795fA9bB7874Ab8E2321313"},"11155420":{"bridge":"0x3E853eF91E159Dc69B79b32260948fD878361267","token":"0x3789B2a0611177bA9795fA9bB7874Ab8E2321313"}}};/* BRIDGE_CONFIG_END */
+/* BRIDGE_CONFIG_START */const BRIDGE={"hub":{"address":"0x5b1869D9A4C187F2EAa108f3062412ecf0526b24","wqms":"0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab"},"spokes":{"84532":{"bridge":"0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab","token":"0xcC5f0a600fD9dC5Dd8964581607E5CC0d22C5A78"},"421614":{"bridge":"0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab","token":"0xcC5f0a600fD9dC5Dd8964581607E5CC0d22C5A78"},"11155111":{"bridge":"0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab","token":"0xcC5f0a600fD9dC5Dd8964581607E5CC0d22C5A78"},"11155420":{"bridge":"0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab","token":"0xcC5f0a600fD9dC5Dd8964581607E5CC0d22C5A78"}}};/* BRIDGE_CONFIG_END */
 const SEL={"depositNative": "0xf0194945", "depositWQMS": "0x12a70661", "bridgeBack": "0x052bc1f3", "processed": "0xc1f0808a", "minAmount": "0x9b2cb5d8", "maxAmount": "0x5f48f393", "approve": "0x095ea7b3", "allowance": "0xdd62ed3e"};
 const TOPIC={"bridged": "0x00ecd434907c7fb39030e4c2dd3b81850ed4074e0b7143dfb58047c05d551194", "delivered": "0x412a2e49e2fbaa8106a12b6da52f3230d42664f1820de27b3a1806eecb295450"};
 const encU=v=>BigInt(v).toString(16).padStart(64,'0');
@@ -227,7 +253,7 @@ function fmt(str,max=6){
   if(!ff&&/[1-9]/.test(f))return '<0.'+'0'.repeat(max-1)+'1';
   return i+(ff?'.'+ff:'');
 }
-const short=a=>a?a.slice(0,6)+'…'+a.slice(-4):'';
+const short=a=>a?a.slice(0,6)+'â€¦'+a.slice(-4):'';
 const isAddr=a=>/^0x[0-9a-fA-F]{40}$/.test(a||'');
 const toHex=v=>'0x'+BigInt(v).toString(16);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -316,11 +342,34 @@ async function loadChains(){
 const bridgeReady=()=>!!(BRIDGE.hub&&BRIDGE.hub.address);
 const isSpoke=id=>!!(BRIDGE.spokes&&BRIDGE.spokes[id]);
 // 'relay' = a normal route, 'own' = QMS <-> a supported network, 'blocked' = QMS with an unsupported network
+const SUPPORTED_CHAIN_IDS = new Set([
+  19480,   // QMS Testnet
+  84532,   // Base Sepolia
+  421614,  // Arbitrum Sepolia
+  11155420 // OP Sepolia
+]);
+
 function routeKind(){
-  const a=S.from.chainId,b=S.to.chainId;
-  if(a!==QMS.id&&b!==QMS.id)return 'relay';
-  const other=a===QMS.id?b:a;
-  return bridgeReady()&&isSpoke(other)?'own':'blocked';
+  const a = S.from.chainId;
+  const b = S.to.chainId;
+
+  // Block routes involving unsupported networks.
+  if (!SUPPORTED_CHAIN_IDS.has(a) ||
+      !SUPPORTED_CHAIN_IDS.has(b)) {
+    return 'blocked';
+  }
+
+  // A bridge route must use two different networks.
+  if (a === b) return 'blocked';
+
+  // Routes between supported non-QMS networks use the relay.
+  if (a !== QMS.id && b !== QMS.id) {
+    return 'relay';
+  }
+
+  // QMS routes require a configured spoke contract.
+  const other = a === QMS.id ? b : a;
+  return bridgeReady() && isSpoke(other) ? 'own' : 'blocked';
 }
 const inFamily=(cid,t)=>cid===QMS.id?(t.native||(BRIDGE.hub.wqms&&t.address.toLowerCase()===BRIDGE.hub.wqms.toLowerCase())):!!t.bridged;
 function matchToken(){ // destination token follows the source token
@@ -413,7 +462,7 @@ function connect(){
 function walletMenu(){
   const body=h('div',{},
     h('p',{style:'font-family:var(--mono);font-size:13px;word-break:break-all;margin:0 0 4px'},S.account),
-    h('p',{style:'color:var(--mut);font-size:12px;margin:0 0 12px'},S.walletName+(S.walletChain?' · chain '+S.walletChain:'')),
+    h('p',{style:'color:var(--mut);font-size:12px;margin:0 0 12px'},S.walletName+(S.walletChain?' Â· chain '+S.walletChain:'')),
     h('div',{style:'display:flex;gap:8px'},
       h('button',{class:'mini',onclick:()=>{navigator.clipboard&&navigator.clipboard.writeText(S.account);toast('Address copied')}},'Copy address'),
       h('button',{class:'mini',onclick:()=>{S.account=null;S.provider=null;LS.set('tetrixbridge.wallet',null);$('dlg').close();renderAll();scheduleQuote()}},'Disconnect')));
@@ -451,7 +500,7 @@ function scheduleQuote(){
   S.quoteSeq++;
   const f=fromTok(),kind=routeKind();
   if(kind==='blocked'){
-    S.q={state:'unavailable',msg:bridgeReady()?'QMS bridging is available with Sepolia, Base Sepolia, Arbitrum Sepolia and OP Sepolia.':'QMS bridging isn’t available yet.'};
+    S.q={state:'unavailable',msg:bridgeReady()?'QMS bridging is available with Base Sepolia, Arbitrum Sepolia and OP Sepolia.':'QMS bridging isnâ€™t available yet.'};
     renderQuote();return;
   }
   const wei=S.amount?parseUnits(S.amount,f.decimals):null;
@@ -474,7 +523,7 @@ async function runOwnQuote(seq,wei){
     else if(wei>max)q={state:'error',error:'Maximum per transfer is '+fmt(formatUnits(max,18))+' QMS.'};
     else if(toQms&&pool&&wei>BigInt(pool))q={state:'error',error:'Not enough QMS liquidity on QMS Testnet right now. Try a smaller amount.'};
     else q={state:'ready',own:true,out:formatUnits(wei,18)};
-  }catch(e){q={state:'error',error:'Couldn’t reach the network. Check your connection and try again.'}}
+  }catch(e){q={state:'error',error:'Couldnâ€™t reach the network. Check your connection and try again.'}}
   if(seq!==S.quoteSeq)return;
   S.q=q;renderQuote();
 }
@@ -493,7 +542,7 @@ async function runQuote(seq,wei){
     else S.q={state:'ready',quote:j};
   }catch(e){
     if(seq!==S.quoteSeq)return;
-    S.q={state:'error',error:'Couldn’t fetch a quote. Check your connection and try again.'};
+    S.q={state:'error',error:'Couldnâ€™t fetch a quote. Check your connection and try again.'};
   }
   renderQuote();
 }
@@ -520,13 +569,13 @@ function qmsSvg(){const d=document.createElement('span');d.innerHTML='<svg viewB
 function renderSides(){
   const fc=fromChain(),tc=toChain(),ft=fromTok(),tt=toTok();
   const fill=(btn,kids)=>{btn.replaceChildren(...kids)};
-  fill($('fromChain'),[chip(fc),fc.name,h('span',{class:'car'},'▼')]);
-  fill($('toChain'),[chip(tc),tc.name,h('span',{class:'car'},'▼')]);
-  fill($('fromTok'),[chip(null,ft),ft.symbol,h('span',{class:'car'},'▼')]);
-  fill($('toTok'),[chip(null,tt),tt.symbol,h('span',{class:'car'},'▼')]);
+  fill($('fromChain'),[chip(fc),fc.name,h('span',{class:'car'},'â–¼')]);
+  fill($('toChain'),[chip(tc),tc.name,h('span',{class:'car'},'â–¼')]);
+  fill($('fromTok'),[chip(null,ft),ft.symbol,h('span',{class:'car'},'â–¼')]);
+  fill($('toTok'),[chip(null,tt),tt.symbol,h('span',{class:'car'},'â–¼')]);
   const fb=balOf(S.from.chainId,ft),tb=balOf(S.to.chainId,tt);
-  $('fromBal').textContent=S.account?(fb==null?'Balance: —':'Balance: '+fmt(formatUnits(fb,ft.decimals))+' '+ft.symbol):'';
-  $('toBal').textContent=S.account?(tb==null?'Balance: —':'Balance: '+fmt(formatUnits(tb,tt.decimals))+' '+tt.symbol):'';
+  $('fromBal').textContent=S.account?(fb==null?'Balance: â€”':'Balance: '+fmt(formatUnits(fb,ft.decimals))+' '+ft.symbol):'';
+  $('toBal').textContent=S.account?(tb==null?'Balance: â€”':'Balance: '+fmt(formatUnits(tb,tt.decimals))+' '+tt.symbol):'';
   $('maxBtn').hidden=!(S.account&&fb);
   $('walletBtn').textContent=S.account?short(S.account):'Connect wallet';
   $('walletBtn').classList.toggle('on',!!S.account);
@@ -546,7 +595,7 @@ function renderQuote(){
   if(q.state==='error'){msg.className='msg show err';msg.textContent=q.error}
   else if(q.state==='unavailable'){msg.className='msg show info';msg.textContent=q.msg}
   else if(q.state==='ready'&&q.own){
-    const rows=[['You receive',fmt(q.out,8)+' '+toTok().symbol],['Estimated time','~1–2 min'],['Bridge fee','None']];
+    const rows=[['You receive',fmt(q.out,8)+' '+toTok().symbol],['Estimated time','~1â€“2 min'],['Bridge fee','None']];
     det.replaceChildren(...rows.map(r=>h('div',{class:'d'},h('span',{},r[0]),h('span',{},r[1]))));
     det.hidden=false;
   }
@@ -567,7 +616,7 @@ function renderQuote(){
   renderPrimary();
 }
 function primaryState(){
-  if(S.busy)return{label:'Working…',off:true};
+  if(S.busy)return{label:'Workingâ€¦',off:true};
   if(S.q.state==='unavailable')return{label:'Route unavailable',off:true};
   if(!S.account)return{label:'Connect wallet',off:false,act:connect};
   const f=fromTok(),wei=S.amount?parseUnits(S.amount,f.decimals):null;
@@ -575,8 +624,8 @@ function primaryState(){
   if(S.useRecipient&&!isAddr(S.recipient))return{label:'Enter a valid recipient',off:true};
   const b=balOf(S.from.chainId,f);
   if(b!=null&&wei>b)return{label:'Insufficient '+f.symbol,off:true};
-  if(S.q.state==='loading')return{label:'Fetching quote…',off:true};
-  if(S.q.state==='error')return{label:'Can’t bridge this amount',off:true};
+  if(S.q.state==='loading')return{label:'Fetching quoteâ€¦',off:true};
+  if(S.q.state==='error')return{label:'Canâ€™t bridge this amount',off:true};
   if(S.q.state!=='ready')return{label:'Enter an amount',off:true};
   return{label:'Bridge to '+toChain().name,off:false,act:doBridge};
 }
@@ -592,12 +641,52 @@ function openDialog(title,body,searchable,onSearch){
   if(!$('dlg').open)$('dlg').showModal();
 }
 function pickChain(side){
-  const body=h('div',{});
-  for(const c of S.chains.values()){
-    body.append(h('button',{class:'li',onclick:()=>{$('dlg').close();setChain(side,c.id)}},
-      chip(c),h('span',{class:'n'},h('b',{},c.name),h('small',{},'Chain '+c.id))));
+  const body = h('div',{});
+
+  const supported = [];
+  const unavailable = [];
+
+  for (const c of S.chains.values()){
+    (SUPPORTED_CHAIN_IDS.has(c.id) ? supported : unavailable).push(c);
   }
-  openDialog(side==='from'?'From network':'To network',body);
+
+  function addSection(title, chains, isUnavailable){
+    if (!chains.length) return;
+
+    body.append(h('div',{class:'network-section'},title));
+
+    for (const c of chains){
+      const button = h('button',{
+        class: 'li' + (isUnavailable ? ' unavailable' : ''),
+        type: 'button',
+        ...(isUnavailable
+          ? {disabled:true,'aria-disabled':'true'}
+          : {onclick:()=>{
+              $('dlg').close();
+              setChain(side,c.id);
+            }})
+      },
+        chip(c),
+        h('span',{class:'n'},
+          h('b',{},c.name),
+          h('small',{},'Chain '+c.id)
+        ),
+        ...(isUnavailable
+          ? [h('span',{class:'route-status'},'Unavailable')]
+          : [])
+      );
+
+      body.append(button);
+    }
+  }
+
+  addSection('Supported',supported,false);
+  addSection('Unavailable routes',unavailable,true);
+
+  openDialog(
+    side === 'from' ? 'From network' : 'To network',
+    body
+  );
 }
 function setChain(side,id){
   const other=side==='from'?'to':'from';
@@ -632,7 +721,7 @@ let steps=[];
 function drawProgress(title){
   const p=$('prog');p.hidden=false;
   p.replaceChildren(h('h4',{},title||'Progress'),...steps.map(s=>
-    h('div',{class:'st '+s.state},h('span',{class:'dot'},s.state==='done'?'✓':s.state==='error'?'!':''),
+    h('div',{class:'st '+s.state},h('span',{class:'dot'},s.state==='done'?'âœ“':s.state==='error'?'!':''),
       h('div',{},s.label,s.detail?h('small',{},s.detail):null,s.link?h('small',{},h('a',{href:s.link,target:'_blank',rel:'noopener'},'View on explorer')):null))));
 }
 function mark(i,state,detail,link){const s=steps[i];if(!s)return;s.state=state;if(detail!==undefined)s.detail=detail;if(link!==undefined)s.link=link;drawProgress()}
@@ -697,7 +786,7 @@ async function doBridgeOwn(){
   if(needApprove)steps.push({label:'Approve WQMS',state:'todo'});
   steps.push({label:toQms?'Confirm in wallet':'Confirm bridge in wallet',state:'todo'});
   steps.push({label:'Funds arrive on '+tc.name,state:'todo'});
-  drawProgress('Bridging '+amtIn+' '+ft.symbol+' → '+tt.symbol);
+  drawProgress('Bridging '+amtIn+' '+ft.symbol+' â†’ '+tt.symbol);
   let cur=0,id=null;
   try{
     await ensureChain(fc.id);
@@ -754,7 +843,7 @@ async function doBridge(){
   S.busy=true;renderPrimary();
   steps=q.steps.map(s=>({label:STEP_LABEL[s.id]||s.description||s.id,state:'todo'}));
   steps.push({label:'Funds arrive on '+tc.name,state:'todo'});
-  drawProgress('Bridging '+amtIn+' '+ft.symbol+' → '+tt.symbol);
+  drawProgress('Bridging '+amtIn+' '+ft.symbol+' â†’ '+tt.symbol);
   let requestId=null,originHash=null,final=null,cur=0;
   try{
     for(let si=0;si<q.steps.length;si++){
@@ -815,8 +904,8 @@ function renderHistory(){
     const fc=chainOf(x.fromId),tc=chainOf(x.toId);
     const li=txUrl(fc,x.txIn),lo=x.txOut&&txUrl(tc,x.txOut);
     return h('div',{class:'hi'},
-      h('div',{class:'t'},h('span',{},x.amtIn+' '+x.sym+' → '+x.amtOut+' '+x.outSym),h('span',{class:'stat '+x.status},STATUS_TXT[x.status]||x.status)),
-      h('div',{class:'m'},h('span',{},x.from+' → '+x.to),h('span',{},new Date(x.ts).toLocaleString()),
+      h('div',{class:'t'},h('span',{},x.amtIn+' '+x.sym+' â†’ '+x.amtOut+' '+x.outSym),h('span',{class:'stat '+x.status},STATUS_TXT[x.status]||x.status)),
+      h('div',{class:'m'},h('span',{},x.from+' â†’ '+x.to),h('span',{},new Date(x.ts).toLocaleString()),
         li?h('a',{href:li,target:'_blank',rel:'noopener'},'Source tx'):null,lo?h('a',{href:lo,target:'_blank',rel:'noopener'},'Fill tx'):null));
   }));
 }
@@ -919,3 +1008,5 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
 </script>
 </body>
 </html>
+
+

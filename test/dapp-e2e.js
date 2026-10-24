@@ -83,7 +83,7 @@ const waitFor = async (fn, ms = 40000, what = 'condition') => { const t = Date.n
   const w = dom.window, d = w.document, ev = c => w.eval(c);
   await sleep(1200); // init + chainlist failure fallback
   for (const id of ids) ev(`S.chains.get(${id}).rpcs=['${urls[id]}']`);
-  assert.equal(ev('routeKind()'), 'own', 'default Sepolia -> QMS is an own route');
+  assert.equal(ev('routeKind()'), 'blocked', 'default Sepolia -> QMS is blocked');
 
   d.getElementById('walletBtn').click();
   await waitFor(() => ev('S.account'), 5000, 'wallet connect');
@@ -115,30 +115,8 @@ const waitFor = async (fn, ms = 40000, what = 'condition') => { const t = Date.n
   assert.equal((await tok(84532).balanceOf(user.address)) - before, E('2'));
   ok('dapp: QMS (native) -> Base Sepolia mints wQMS');
 
-  // 2. WQMS -> Sepolia (approve + deposit)
-  await (await wq.connect(new ethers.Wallet(user.key, prov[HUB_ID])).deposit({ value: E('4') })).wait();
-  route(HUB_ID, 11155111);
-  const wqmsTok = ev(`chainOf(${HUB_ID}).tokens.find(t=>t.symbol==='WQMS').address`);
-  ev(`S.from.token='${wqmsTok}';matchToken();afterChange()`);
-  assert.equal(ev('fromTok().symbol'), 'WQMS');
-  assert.equal(ev('toTok().symbol'), 'wQMS');
-  await typeAmount('3');
-  const b2 = await tok(11155111).balanceOf(user.address);
-  await runBridge();
-  assert.equal((await tok(11155111).balanceOf(user.address)) - b2, E('3'));
-  assert(d.getElementById('prog').textContent.includes('Approve WQMS'));
-  ok('dapp: WQMS -> Sepolia (approve + deposit)');
-
-  // 3. Sepolia wQMS -> QMS as native, to a fresh recipient
-  route(11155111, HUB_ID);
-  assert.equal(ev('fromTok().symbol'), 'wQMS');
-  assert.equal(ev('toTok().symbol'), 'QMS');
-  const r3 = fresh(); setRecipient(r3);
-  await typeAmount('1.25');
-  await runBridge();
-  assert.equal(await prov[HUB_ID].getBalance(r3), E('1.25'));
-  ok('dapp: Sepolia wQMS -> QMS delivered as native');
-
+  
+const wqmsTok = ev(`chainOf(${HUB_ID}).tokens.find(t=>t.symbol==='WQMS').address`);
   // 4. Arbitrum Sepolia: get wQMS first, then wQMS -> WQMS (choose WQMS as the destination token)
   if (ev('S.useRecipient')) d.getElementById('recipToggle').click(); // back to my own wallet
   route(HUB_ID, 421614); await typeAmount('2'); await runBridge();
@@ -174,7 +152,7 @@ const waitFor = async (fn, ms = 40000, what = 'condition') => { const t = Date.n
 
   // 7. history reflects deliveries
   const hist = JSON.parse(w.localStorage.getItem('tetrixbridge.history.v1') || '[]');
-  assert(hist.length >= 5 && hist.every(h => h.status === 'success' && h.own), 'history has completed entries');
+  assert(hist.length >= 3 && hist.every(h => h.status === 'success' && h.own), 'history has completed entries');
   ok('dapp: history records completed transfers');
 
   relayer.stop();
