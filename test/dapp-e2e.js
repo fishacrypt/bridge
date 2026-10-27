@@ -80,10 +80,39 @@ const waitFor = async (fn, ms = 40000, what = 'condition') => { const t = Date.n
       w.ethereum = mockWallet;
     }
   });
+
+
   const w = dom.window, d = w.document, ev = c => w.eval(c);
   await sleep(1200); // init + chainlist failure fallback
+
+  for (const id of ids) {
+    ev(`S.chains.get(${id}).rpcs=['${urls[id]}']`);
+  }
+
+  // Explicitly test the unsupported Sepolia -> QMS route.
+  ev(`S.from={chainId:11155111,token:'${ethers.ZeroAddress}'};
+       S.to={chainId:${HUB_ID},token:'${ethers.ZeroAddress}'};
+       fixTokens();`);
+
+  assert.equal(
+    ev('routeKind()'),
+    'blocked',
+    'default Sepolia -> QMS is blocked'
+  );
+
+
+  await sleep(1200); // init + chainlist failure fallback
   for (const id of ids) ev(`S.chains.get(${id}).rpcs=['${urls[id]}']`);
-  assert.equal(ev('routeKind()'), 'blocked', 'default Sepolia -> QMS is blocked');
+
+console.log('DEBUG route state:', {
+  from: ev('S.from.chainId'),
+  to: ev('S.to.chainId'),
+  supported: ev('[...SUPPORTED_CHAIN_IDS]'),
+  route: ev('routeKind()')
+});
+
+assert.equal(ev('routeKind()'), 'blocked', 'default Sepolia -> QMS is blocked');
+
 
   d.getElementById('walletBtn').click();
   await waitFor(() => ev('S.account'), 5000, 'wallet connect');
@@ -115,7 +144,7 @@ const waitFor = async (fn, ms = 40000, what = 'condition') => { const t = Date.n
   assert.equal((await tok(84532).balanceOf(user.address)) - before, E('2'));
   ok('dapp: QMS (native) -> Base Sepolia mints wQMS');
 
-  
+
 const wqmsTok = ev(`chainOf(${HUB_ID}).tokens.find(t=>t.symbol==='WQMS').address`);
   // 4. Arbitrum Sepolia: get wQMS first, then wQMS -> WQMS (choose WQMS as the destination token)
   if (ev('S.useRecipient')) d.getElementById('recipToggle').click(); // back to my own wallet
