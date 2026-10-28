@@ -1,4 +1,4 @@
-# Tetrix Bridge
+# qros Bridge
 
 Bridge **native QMS** and **WQMS** between QMS Testnet (19480) and:
 
@@ -48,11 +48,11 @@ cp .env.example .env          # then fill it in
 Then:
 
 ```bash
-npm run deploy      # deploys hub + 4 spokes, wires them, writes deployments.json, patches dapp/tetrix-bridge.html
+npm run deploy      # deploys hub + 4 spokes, wires them, writes deployments.json, patches dapp/qros-bridge.html
 npm run relayer     # keep this running (VPS, Railway/Render worker, or `pm2 start`)
 ```
 
-Host `dapp/tetrix-bridge.html` anywhere static (Vercel etc.). If you redeploy contracts later, run `npm run apply-config` and re-upload the page.
+Host `dapp/qros-bridge.html` anywhere static (Vercel etc.). If you redeploy contracts later, run `npm run apply-config` and re-upload the page.
 
 To (re)deploy only some chains: `ONLY_CHAINS=84532,421614 npm run deploy`.
 
@@ -77,5 +77,5 @@ contracts/   QmsBridgeHub, QmsBridgeSpoke, WrappedQMS, BridgeBase (+ test mocks)
 scripts/     compile.js, deploy.js, apply-config.js, chains.js
 relayer/     relayer.js (logic), run.js (entry point)
 test/        e2e.js (contracts + relayer), dapp-e2e.js (the real page + mock wallet)
-dapp/        tetrix-bridge.html
+dapp/        qros-bridge.html
 ```
